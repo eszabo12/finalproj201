@@ -58,3 +58,16 @@ To return a single User document:
 `int wins = doc.get("wins")`
 
 will give you the number of wins for the username searched. You can replace "wins" with "losses", "percentage", "username", "password" to get those respective fields.
+
+To add win to a user's match history: 
+
+`public static void addWin(MongoCollection<Document> collection, String username, String opponent)`
+
+To add loss to a user's match history:
+
+`public static void addLoss(MongoCollection<Document> collection, String username, String opponent)`
+
+To get a list of a user's match history:
+
+`public static List<Document> listOfMatches(MongoCollection<Document> collection, String username)`
+

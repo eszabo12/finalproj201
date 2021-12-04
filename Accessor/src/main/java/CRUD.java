@@ -4,6 +4,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.bson.conversions.Bson;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -15,6 +16,7 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.UpdateResult;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.mongodb.client.model.Sorts.ascending;
@@ -111,6 +113,56 @@ public class CRUD {
         }
     }
 
+    // Add match to match history of winner
+    public static void addWin(MongoCollection<Document> collection, String username, String opponent) {
+        try {
+            Document doc = collection.find(eq("username", username)).first();
+
+            Document query = new Document().append("username", username);
+            Document toAdd = new Document().append("opponent", opponent).append("won", true);
+            Bson updates = Updates.combine(
+                    Updates.addToSet("history", toAdd));
+
+            UpdateOptions options = new UpdateOptions().upsert(true);
+            UpdateResult result = collection.updateOne(query, updates, options);
+
+        } catch (MongoException me) {
+            System.err.println("Unable to update due to an error: " + me);
+        }
+    }
+
+    // Add match to match history of loser
+    public static void addLoss(MongoCollection<Document> collection, String username, String opponent) {
+        try {
+            Document doc = collection.find(eq("username", username)).first();
+
+            Document query = new Document().append("username", username);
+            Document toAdd = new Document().append("opponent", opponent).append("won", false);
+            Bson updates = Updates.combine(
+                    Updates.addToSet("history", toAdd));
+
+            UpdateOptions options = new UpdateOptions().upsert(true);
+            UpdateResult result = collection.updateOne(query, updates, options);
+
+        } catch (MongoException me) {
+            System.err.println("Unable to update due to an error: " + me);
+        }
+    }
+
+    // Return ArrayList of match history for user
+    public static List<Document> listOfMatches(MongoCollection<Document> collection, String username) {
+        try {
+            List<Document> listOfMatches = new ArrayList<>();
+            Document doc = collection.find(eq("username", username)).first();
+            listOfMatches = (List<Document>) doc.get("history");
+            // collection.find(eq("username", username)).into(listOfMatches);
+            return listOfMatches;
+        } catch (MongoException me) {
+            System.err.println("Unable to find due to an error: " + me);
+        }
+        return null;
+    }
+
     // Return ArrayList of user Documents sorted by wins
     // Access individual fields in each document of the ArrayList with ArrayList.get(i).get("username") for username, etc.
     public static List<Document> sortedWins(MongoCollection<Document> collection) {
@@ -145,7 +197,8 @@ public class CRUD {
                     .append("password", password)
                     .append("wins", 0)
                     .append("losses", 0)
-                    .append("percentage", 0.0));
+                    .append("percentage", 0.0)
+                    .append("history", Arrays.asList()));
         } catch (MongoException me) {
             System.err.println("Unable to insert due to an error: " + me);
         }
